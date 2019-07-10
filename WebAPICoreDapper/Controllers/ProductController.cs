@@ -28,34 +28,85 @@ namespace WebAPICoreDapper.Controllers
             {
                 if (conn.State == System.Data.ConnectionState.Closed)
                     conn.Open();            
-                    var result = await conn.QueryAsync<Product>("select * from Products", null, null, null, System.Data.CommandType.Text);
+                    var result = await conn.QueryAsync<Product>("GetALL_Product", null, null, null, System.Data.CommandType.StoredProcedure);
                     return result;
             }
         }
 
         // GET: api/Product/5
         [HttpGet("{id}", Name = "Get")]
-        public string Get(int id)
+        public async Task<Product> Get(int id)
         {
-            return "value";
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                if (conn.State == System.Data.ConnectionState.Closed)
+                    conn.Open();
+                var parameters = new DynamicParameters();
+                parameters.Add("id",id);
+                var result = await conn.QueryAsync<Product>("Get_Product_By_Id", parameters, null, null, System.Data.CommandType.StoredProcedure);
+                return result.Single();
+            }
+            
         }
 
         // POST: api/Product
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<int> Post([FromBody] Product product)
         {
+            int newID = 0;
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                if (conn.State == System.Data.ConnectionState.Closed)
+                    conn.Open();
+                var parameters = new DynamicParameters();
+                parameters.Add("sku", product.Sku);
+                parameters.Add("price", product.Price);
+                parameters.Add("IsActive", product.IsActive);
+                parameters.Add("ImageUrl", product.ImageUrl);
+                parameters.Add("id", dbType:System.Data.DbType.Int32,direction:System.Data.ParameterDirection.Output);
+                await conn.ExecuteAsync("Create_Product", parameters, null, null, System.Data.CommandType.StoredProcedure);
+
+                newID = parameters.Get<int>("id");
+                
+            }
+            return newID;
         }
 
         // PUT: api/Product/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task Put (int id, [FromBody] Product product)
         {
+            
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                if (conn.State == System.Data.ConnectionState.Closed)
+                    conn.Open();
+                var parameters = new DynamicParameters();
+                parameters.Add("id", id);
+                parameters.Add("sku", product.Sku);
+                parameters.Add("price", product.Price);
+                parameters.Add("IsActive", product.IsActive);
+                parameters.Add("ImageUrl", product.ImageUrl);
+                
+                await conn.ExecuteAsync("Update_Product", parameters, null, null, System.Data.CommandType.StoredProcedure);
+
+            }
+          
         }
 
         // DELETE: api/ApiWithActions/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task Delete(int id)
         {
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                if (conn.State == System.Data.ConnectionState.Closed)
+                    conn.Open();
+                var parameters = new DynamicParameters();
+                parameters.Add("id", id);
+                await conn.ExecuteAsync("Delete_Product", parameters, null, null, System.Data.CommandType.StoredProcedure);
+
+            }
         }
     }
 }
