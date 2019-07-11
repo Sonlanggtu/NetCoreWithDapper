@@ -27,6 +27,7 @@ namespace WebAPICoreDapper.Controllers
         [ValidateModel]
         public async Task<IEnumerable<Product>> Get()
         {
+            throw new Exception("Test Handle Exception");
             using (var conn = new SqlConnection(_connectionString))
             {
                 if (conn.State == System.Data.ConnectionState.Closed)
