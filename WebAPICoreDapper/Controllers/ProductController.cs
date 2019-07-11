@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using WebAPICoreDapper.DTO;
+using WebAPICoreDapper.Fillter;
 using WebAPICoreDapper.Models;
 
 namespace WebAPICoreDapper.Controllers
@@ -23,6 +24,7 @@ namespace WebAPICoreDapper.Controllers
         }
         // GET: api/Product
         [HttpGet]
+        [ValidateModel]
         public async Task<IEnumerable<Product>> Get()
         {
             using (var conn = new SqlConnection(_connectionString))
@@ -36,6 +38,7 @@ namespace WebAPICoreDapper.Controllers
 
         // GET: api/Product/5
         [HttpGet("{id}", Name = "Get")]
+        [ValidateModel]
         public async Task<Product> Get(int id)
         {
             using (var conn = new SqlConnection(_connectionString))
@@ -49,8 +52,9 @@ namespace WebAPICoreDapper.Controllers
             }
             
         }
-
+        
         [HttpGet("paging", Name = "GetPaging")]
+        [ValidateModel]
         public async Task<PagedResult<Product>> GetPaging(string keyword, int CategoryId, int pageIndex,  int pageSize)
         {
             using (var conn = new SqlConnection(_connectionString))
@@ -81,7 +85,8 @@ namespace WebAPICoreDapper.Controllers
 
         // POST: api/Product
         [HttpPost]
-        public async Task<int> Post([FromBody] Product product)
+        [ValidateModel]
+        public async Task<IActionResult> Post([FromBody] Product product)
         {
             int newID = 0;
             using (var conn = new SqlConnection(_connectionString))
@@ -99,12 +104,13 @@ namespace WebAPICoreDapper.Controllers
                 newID = parameters.Get<int>("id");
                 
             }
-            return newID;
+            return Ok(newID);
         }
 
         // PUT: api/Product/5
         [HttpPut("{id}")]
-        public async Task Put (int id, [FromBody] Product product)
+        [ValidateModel]
+        public async Task<IActionResult> Put (int id, [FromBody] Product product)
         {
             
             using (var conn = new SqlConnection(_connectionString))
@@ -120,12 +126,14 @@ namespace WebAPICoreDapper.Controllers
                 
                 await conn.ExecuteAsync("Update_Product", parameters, null, null, System.Data.CommandType.StoredProcedure);
 
+                return Ok();
             }
           
         }
 
         // DELETE: api/ApiWithActions/5
         [HttpDelete("{id}")]
+        [ValidateModel]
         public async Task Delete(int id)
         {
             using (var conn = new SqlConnection(_connectionString))
