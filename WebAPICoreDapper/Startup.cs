@@ -44,8 +44,11 @@ namespace WebAPICoreDapper
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
+
+            loggerFactory.AddFile("Logs/myapp-{Date}.txt", isJson: true);
+
             app.UseExceptionHandler(options =>
             {
                 options.Run(async context =>

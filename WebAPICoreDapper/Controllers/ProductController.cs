@@ -7,6 +7,7 @@ using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using WebAPICoreDapper.DTO;
 using WebAPICoreDapper.Fillter;
 using WebAPICoreDapper.Models;
@@ -18,16 +19,18 @@ namespace WebAPICoreDapper.Controllers
     public class ProductController : ControllerBase
     {
         private readonly string _connectionString;
-        public ProductController(IConfiguration configuration)
+        private readonly ILogger<ProductController> _logger;
+        public ProductController(IConfiguration configuration, ILogger<ProductController> logger)
         {
             _connectionString = configuration.GetConnectionString("DbConnectionString");
+            _logger = logger;
         }
         // GET: api/Product
         [HttpGet]
         [ValidateModel]
         public async Task<IEnumerable<Product>> Get()
         {
-            throw new Exception("Test Handle Exception");
+            _logger.LogError("File dấu vết hệ thống được ghi lại (ProductController)");
             using (var conn = new SqlConnection(_connectionString))
             {
                 if (conn.State == System.Data.ConnectionState.Closed)
