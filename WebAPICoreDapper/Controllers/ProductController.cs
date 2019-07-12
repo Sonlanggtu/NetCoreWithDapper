@@ -1,36 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using WebAPICoreDapper.DTO;
+using WebAPICoreDapper.Extensions;
 using WebAPICoreDapper.Fillter;
 using WebAPICoreDapper.Models;
+using WebAPICoreDapper.Resources;
 
 namespace WebAPICoreDapper.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/{culture}[controller]")]
     [ApiController]
+    [MiddlewareFilter(typeof(LocalizationPipeline))]
     public class ProductController : ControllerBase
     {
         private readonly string _connectionString;
         private readonly ILogger<ProductController> _logger;
-        public ProductController(IConfiguration configuration, ILogger<ProductController> logger)
+        private readonly IStringLocalizer<ProductController> _localizer;
+        private readonly LocalService _localService;
+        public ProductController(IConfiguration configuration, ILogger<ProductController> logger,
+            IStringLocalizer<ProductController> localizer, LocalService localService)
         {
             _connectionString = configuration.GetConnectionString("DbConnectionString");
             _logger = logger;
+            _localizer = localizer;
+            _localService = localService;
         }
         // GET: api/Product
         [HttpGet]
         [ValidateModel]
         public async Task<IEnumerable<Product>> Get()
         {
-            _logger.LogError("File dấu vết hệ thống được ghi lại (ProductController)");
+            // lay ra culture
+            var culture = CultureInfo.CurrentCulture.Name;
+            string text = _localizer.GetString("Test");
+            string text2 = _localService.GetLocalizedHtmlString("ForgetPassword");
             using (var conn = new SqlConnection(_connectionString))
             {
                 if (conn.State == System.Data.ConnectionState.Closed)

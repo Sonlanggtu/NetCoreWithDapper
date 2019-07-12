@@ -10,10 +10,11 @@ namespace WebAPICoreDapper.Models
     {
         public int Id { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "SkuRequiredMessage")]
+        [StringLength(8, MinimumLength = 2, ErrorMessage = "SKUStringLength")]
         public string Sku { get; set; }
 
-        [Required]
+        
         public float Price { get; set; }
 
         public bool IsActive { get; set; }
