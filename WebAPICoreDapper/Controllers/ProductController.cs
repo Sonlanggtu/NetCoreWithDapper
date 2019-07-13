@@ -132,6 +132,7 @@ namespace WebAPICoreDapper.Controllers
                 parameters.Add("SeoDescription", product.SeoDescription);
                 parameters.Add("SeoKeyword", product.SeoKeyword);
                 parameters.Add("SeoTitle", product.SeoTitle);
+                parameters.Add("CategoryIds", product.CategoryIds);
                 await conn.ExecuteAsync("Create_Product", parameters, null, null, System.Data.CommandType.StoredProcedure);
                 newID = parameters.Get<int>("id");
             }
@@ -164,7 +165,7 @@ namespace WebAPICoreDapper.Controllers
                 parameters.Add("SeoDescription", product.SeoDescription);
                 parameters.Add("SeoKeyword", product.SeoKeyword);
                 parameters.Add("SeoTitle", product.SeoTitle);
-
+                parameters.Add("CategoryIds", product.CategoryIds);
                 await conn.ExecuteAsync("Update_Product", parameters, null, null, System.Data.CommandType.StoredProcedure);
 
                 return Ok();
