@@ -185,7 +185,7 @@ namespace WebAPICoreDapper.Controllers
                 var parameters = new DynamicParameters();
                 parameters.Add("id", id);
                 await conn.ExecuteAsync("Delete_Product", parameters, null, null, System.Data.CommandType.StoredProcedure);
-
+                
             }
         }
     }

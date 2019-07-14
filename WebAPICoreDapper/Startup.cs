@@ -23,6 +23,11 @@ using Newtonsoft.Json.Serialization;
 using Swashbuckle.AspNetCore.Swagger;
 using WebAPICoreDapper.Resources;
 
+
+using Microsoft.AspNetCore.Identity;
+
+using WebAPICoreDapper.Data;
+using WebAPICoreDapper.Models;
 namespace WebAPICoreDapper
 {
     public class Startup
@@ -37,6 +42,11 @@ namespace WebAPICoreDapper
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddTransient<IUserStore<AppUser>, UserStore>();
+            services.AddTransient<IRoleStore<AppRole>, RoleStore>();
+            services.AddIdentity<AppUser, AppRole>()
+                .AddDefaultTokenProviders();
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1).AddJsonOptions(opt =>
             {
                 opt.SerializerSettings.ContractResolver = new DefaultContractResolver();
@@ -137,7 +147,9 @@ namespace WebAPICoreDapper
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebAPI Core & Dapper V1");
             });
 
+            app.UseAuthentication();
             app.UseMvc();
+
         }
     }
 }
