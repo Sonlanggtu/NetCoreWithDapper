@@ -12,7 +12,7 @@ using WebAPICoreDapper.Models;
 namespace WebAPICoreDapper.Data
 {
     public class UserStore : IUserStore<AppUser>, IUserEmailStore<AppUser>, IUserPhoneNumberStore<AppUser>,
-          IUserTwoFactorStore<AppUser>, IUserPasswordStore<AppUser>, IUserRoleStore<AppUser>
+             IUserTwoFactorStore<AppUser>, IUserPasswordStore<AppUser>, IUserRoleStore<AppUser>
     {
         private readonly string _connectionString;
 
@@ -29,11 +29,11 @@ namespace WebAPICoreDapper.Data
             {
                 await connection.OpenAsync(cancellationToken);
                 user.Id = Guid.NewGuid();
-                await connection.QuerySingleAsync($@"INSERT INTO [AspNetUsers] ([Id],[UserName], [NormalizedUserName], [Email],
-                    [NormalizedEmail], [EmailConfirmed], [PasswordHash], [PhoneNumber], [PhoneNumberConfirmed], [TwoFactorEnabled])
+                await connection.ExecuteAsync($@"INSERT INTO [AspNetUsers] ([Id],[UserName], [NormalizedUserName], [Email],
+                    [NormalizedEmail], [EmailConfirmed], [PasswordHash], [PhoneNumber], [PhoneNumberConfirmed], [TwoFactorEnabled],[LockoutEnabled],[AccessFailedCount],[FullName])
                     VALUES (@{nameof(AppUser.Id)},@{nameof(AppUser.UserName)}, @{nameof(AppUser.NormalizedUserName)}, @{nameof(AppUser.Email)},
                     @{nameof(AppUser.NormalizedEmail)}, @{nameof(AppUser.EmailConfirmed)}, @{nameof(AppUser.PasswordHash)},
-                    @{nameof(AppUser.PhoneNumber)}, @{nameof(AppUser.PhoneNumberConfirmed)}, @{nameof(AppUser.TwoFactorEnabled)});", user);
+                    @{nameof(AppUser.PhoneNumber)}, @{nameof(AppUser.PhoneNumberConfirmed)}, @{nameof(AppUser.TwoFactorEnabled)},@{nameof(AppUser.LockoutEnabled)},@{nameof(AppUser.AccessFailedCount)},@{nameof(AppUser.FullName)});", user);
             }
 
             return IdentityResult.Success;
