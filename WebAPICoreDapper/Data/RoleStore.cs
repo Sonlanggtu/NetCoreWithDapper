@@ -28,7 +28,7 @@ namespace WebAPICoreDapper.Data
             {
                 await connection.OpenAsync(cancellationToken);
                 role.Id = Guid.NewGuid();
-                await connection.QuerySingleAsync($@"INSERT INTO [AspNetRoles] ([Id], [Name], [NormalizedName])
+                await connection.ExecuteAsync($@"INSERT INTO [AspNetRoles] ([Id], [Name], [NormalizedName])
                     VALUES (@{nameof(AppRole.Id)},@{nameof(AppRole.Name)}, @{nameof(AppRole.NormalizedName)});", role);
             }
 
@@ -87,8 +87,8 @@ namespace WebAPICoreDapper.Data
 
         public Task SetNormalizedRoleNameAsync(AppRole role, string normalizedName, CancellationToken cancellationToken)
         {
-            role.NormalizedName = normalizedName;
-            return Task.FromResult(0);
+           // role.NormalizedName = normalizedName;
+            return Task.FromResult(role.NormalizedName);
         }
 
         public async Task<AppRole> FindByIdAsync(string roleId, CancellationToken cancellationToken)
@@ -103,7 +103,7 @@ namespace WebAPICoreDapper.Data
             }
         }
 
-        public async Task<AppRole> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
+        public async Task<AppRole> FindByNameAsync(string Name, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -111,7 +111,7 @@ namespace WebAPICoreDapper.Data
             {
                 await connection.OpenAsync(cancellationToken);
                 return await connection.QuerySingleOrDefaultAsync<AppRole>($@"SELECT * FROM [AspNetRoles]
-                    WHERE [NormalizedName] = @{nameof(normalizedRoleName)}", new { normalizedRoleName });
+                    WHERE [Name] = @{nameof(Name)}", new { Name });
             }
         }
 
