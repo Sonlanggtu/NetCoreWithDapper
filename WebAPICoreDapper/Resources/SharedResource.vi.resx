@@ -120,4 +120,10 @@
   <data name="ForgetPassword" xml:space="preserve">
     <value>Quên mật khẩu</value>
   </data>
+  <data name="SkuRequiredMessage" xml:space="preserve">
+    <value>Trường này yêu cầu bắt buộc</value>
+  </data>
+  <data name="SKUStringLength" xml:space="preserve">
+    <value>Độ dài phải từ trong khoảng {2} -{1}  kí tự</value>
+  </data>
 </root>

@@ -9,6 +9,7 @@ namespace WebAPICoreDapper.Models
 
         [Required(ErrorMessage = "SkuRequiredMessage")]
         [StringLength(8, MinimumLength = 2, ErrorMessage = "SKUStringLength")]
+        [Display(Name="SKU Field")]
         public string Sku { get; set; }
 
         public float Price { get; set; }

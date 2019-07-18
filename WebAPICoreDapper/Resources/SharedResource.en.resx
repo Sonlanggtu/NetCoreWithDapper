@@ -120,4 +120,10 @@
   <data name="ForgetPassword" xml:space="preserve">
     <value>Forget Password</value>
   </data>
+  <data name="SkuRequiredMessage" xml:space="preserve">
+    <value>Sku input required</value>
+  </data>
+  <data name="SKUStringLength" xml:space="preserve">
+    <value>SKU required {2} - {1} char</value>
+  </data>
 </root>
