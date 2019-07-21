@@ -100,7 +100,29 @@ namespace WebAPICoreDapper
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "WebAPI Core & Dapper", Version = "v1" });
+                c.SwaggerDoc("v1", new Info {
+                    Title = "WebAPI Core & Dapper", Version = "v1",
+                    Description = "GetStart API Swagger surface",
+                    Contact = new Contact
+                    {
+                        Name = "Sonlanggtu"
+                    }
+
+
+                });
+
+                c.AddSecurityDefinition("Bearer", new ApiKeyScheme
+                {
+                    In = "header",
+                    Description = "Please insert JWT with Bearer into field",
+                    Name = "Authorization",
+                    Type = "apiKey"
+                });
+
+                c.AddSecurityRequirement(new Dictionary<string, IEnumerable<string>>
+                {
+                    { "Bearer", new string[] { } }
+                });
             });
         }
 
@@ -144,6 +166,21 @@ namespace WebAPICoreDapper
             {
                 app.UseHsts();
             }
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), 
+            // specifying the Swagger JSON endpoint.
+            app.UseSwagger(c =>
+            {
+                c.PreSerializeFilters.Add((document, request) =>
+                {
+                    var paths = document.Paths.ToDictionary(item => item.Key.ToLowerInvariant(), item => item.Value);
+                    document.Paths.Clear();
+                    foreach (var pathItem in paths)
+                    {
+                        document.Paths.Add(pathItem.Key, pathItem.Value);
+                    }
+                });
+            });
+
             app.UseHttpsRedirection();
 
 
