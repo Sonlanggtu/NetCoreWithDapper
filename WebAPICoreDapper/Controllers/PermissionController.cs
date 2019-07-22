@@ -80,6 +80,22 @@ namespace WebAPICoreDapper.Controllers
             }
         }
 
+        // xoa quyen
+        [HttpGet("functions-delete-permission-user")]
+        public async Task<IActionResult> Del_FunctionPermissionUser(string roleId, string ActionId)
+        {
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                if (conn.State == ConnectionState.Closed)
+                    conn.Open();
+                var paramaters = new DynamicParameters();
+                paramaters.Add("@roleId", roleId);
+                paramaters.Add("@ActionId", ActionId);
+                var result = await conn.QueryAsync<FunctionViewModel>("Del_Permission_User", paramaters, null, null, System.Data.CommandType.StoredProcedure);
+                return Ok(result);
+            }
+        }
+
         // nhung user co quyen xem
         [HttpGet("functions-view-all")]
         public async Task<IActionResult> GetAllFunctionByPermission()

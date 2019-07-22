@@ -28,8 +28,8 @@ namespace WebAPICoreDapper.Data
             {
                 await connection.OpenAsync(cancellationToken);
                 role.Id = Guid.NewGuid();
-                await connection.ExecuteAsync($@"INSERT INTO [AspNetRoles] ([Id], [Name], [NormalizedName])
-                    VALUES (@{nameof(AppRole.Id)},@{nameof(AppRole.Name)}, @{nameof(AppRole.NormalizedName)});", role);
+                await connection.ExecuteAsync($@"INSERT INTO [AspNetRoles] ([Id], [UserName], [NormalizedName])
+                    VALUES (@{nameof(AppRole.Id)},@{nameof(AppRole.UserName)}, @{nameof(AppRole.NormalizedName)});", role);
             }
 
             return IdentityResult.Success;
@@ -43,7 +43,7 @@ namespace WebAPICoreDapper.Data
             {
                 await connection.OpenAsync(cancellationToken);
                 await connection.ExecuteAsync($@"UPDATE [AspNetRoles] SET
-                    [Name] = @{nameof(AppRole.Name)},
+                    [UserName] = @{nameof(AppRole.UserName)},
                     [NormalizedName] = @{nameof(AppRole.NormalizedName)}
                     WHERE [Id] = @{nameof(AppRole.Id)}", role);
             }
@@ -71,12 +71,12 @@ namespace WebAPICoreDapper.Data
 
         public Task<string> GetRoleNameAsync(AppRole role, CancellationToken cancellationToken)
         {
-            return Task.FromResult(role.Name);
+            return Task.FromResult(role.UserName);
         }
 
         public Task SetRoleNameAsync(AppRole role, string roleName, CancellationToken cancellationToken)
         {
-            role.Name = roleName;
+            role.UserName = roleName;
             return Task.FromResult(0);
         }
 
@@ -103,7 +103,7 @@ namespace WebAPICoreDapper.Data
             }
         }
 
-        public async Task<AppRole> FindByNameAsync(string Name, CancellationToken cancellationToken)
+        public async Task<AppRole> FindByNameAsync(string UserName, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -111,7 +111,7 @@ namespace WebAPICoreDapper.Data
             {
                 await connection.OpenAsync(cancellationToken);
                 return await connection.QuerySingleOrDefaultAsync<AppRole>($@"SELECT * FROM [AspNetRoles]
-                    WHERE [Name] = @{nameof(Name)}", new { Name });
+                    WHERE [UserName] = @{nameof(UserName)}", new { UserName });
             }
         }
 
