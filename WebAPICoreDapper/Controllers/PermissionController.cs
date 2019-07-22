@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using WebAPICoreDapper.Models;
 using WebAPICoreDapper.Extensions;
 using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 
 namespace WebAPICoreDapper.Controllers
 {
@@ -40,8 +41,8 @@ namespace WebAPICoreDapper.Controllers
             }
         }
 
-        [HttpGet("{role}/role-permissions")]
-        public async Task<IActionResult> GetAllRolePermissions(Guid? role)
+        [HttpGet("role-permissions-user")]
+        public async Task<IActionResult> GetAllRolePermissions([Required]string UserName)
         {
             using (var conn = new SqlConnection(_connectionString))
             {
@@ -49,15 +50,15 @@ namespace WebAPICoreDapper.Controllers
                     conn.Open();
 
                 var paramaters = new DynamicParameters();
-                paramaters.Add("@roleId", role);
+                paramaters.Add("@UserName", UserName);
 
-                var result = await conn.QueryAsync<PermissionViewModel>("Get_Permission_ByRoleId", paramaters, null, null, System.Data.CommandType.StoredProcedure);
+                var result = await conn.QueryAsync<PermissionViewModel>("Get_Permission_ByUserName", paramaters, null, null, System.Data.CommandType.StoredProcedure);
                 return Ok(result);
             }
         }
 
         [HttpPost("{role}/save-permissions")]
-        public async Task<IActionResult> SavePermissions(Guid role, [FromBody]List<PermissionViewModel> permissions)
+        public async Task<IActionResult> SavePermissions([Required]Guid role, [FromBody]List<PermissionViewModel> permissions)
         {
             using (var conn = new SqlConnection(_connectionString))
             {
@@ -81,19 +82,25 @@ namespace WebAPICoreDapper.Controllers
         }
 
         // xoa quyen
-        [HttpGet("functions-delete-permission-user")]
-        public async Task<IActionResult> Del_FunctionPermissionUser(string roleId, string ActionId)
+        [HttpDelete("functions-delete-permission-user")]
+        public async Task<IActionResult> Del_FunctionPermissionUser([Required]string UserName, [Required]string ActionId)
         {
-            using (var conn = new SqlConnection(_connectionString))
+            var TestUser = await _userManager.FindByNameAsync(UserName);
+            if (TestUser != null)
             {
-                if (conn.State == ConnectionState.Closed)
-                    conn.Open();
-                var paramaters = new DynamicParameters();
-                paramaters.Add("@roleId", roleId);
-                paramaters.Add("@ActionId", ActionId);
-                var result = await conn.QueryAsync<FunctionViewModel>("Del_Permission_User", paramaters, null, null, System.Data.CommandType.StoredProcedure);
-                return Ok(result);
+                using (var conn = new SqlConnection(_connectionString))
+                {
+                    if (conn.State == ConnectionState.Closed)
+                        conn.Open();
+                    var paramaters = new DynamicParameters();
+                    paramaters.Add("@UserName", UserName);
+                    paramaters.Add("@ActionId", ActionId);
+                    var result = await conn.QueryAsync<FunctionViewModel>("Del_Permission_User", paramaters, null, null, System.Data.CommandType.StoredProcedure);
+                    return Ok(result);
+                }
             }
+            return BadRequest();
+
         }
 
         // nhung user co quyen xem

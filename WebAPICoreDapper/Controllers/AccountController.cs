@@ -92,12 +92,22 @@ namespace WebAPICoreDapper.Controllers
 
             if (result.Succeeded)
             {
-                // User claim for write customers data
-                //await _userManager.AddClaimAsync(user, new Claim("Customers", "Write"));
+                using (var conn = new SqlConnection(_connectionString))
+                {
+                    if (conn.State == System.Data.ConnectionState.Closed)
+                        conn.Open();
 
-                //await _signInManager.SignInAsync(user, false);
+                    Guid RolesId = Guid.NewGuid();
+                    var paramaters = new DynamicParameters();
+                    paramaters.Add("@RoleId", RolesId);
+                    paramaters.Add("@UserName", model.UserName);
+                    paramaters.Add("@UserId", user.Id);
+                    var results = await conn.QueryAsync<string>("Create_Role_UserRole", paramaters, null, null, System.Data.CommandType.StoredProcedure);
+                    return Ok(model);
+                }
 
-                return Ok(model);
+
+                
             }
 
             return BadRequest();
@@ -118,5 +128,6 @@ namespace WebAPICoreDapper.Controllers
                 return result.ToList();
             }
         }
+
     }
 }
