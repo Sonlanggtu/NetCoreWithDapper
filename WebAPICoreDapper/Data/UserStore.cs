@@ -263,7 +263,7 @@ namespace WebAPICoreDapper.Data
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync(cancellationToken);
-                var queryResults = await connection.QueryAsync<string>("SELECT r.[Name] FROM [AspNetRoles] r INNER JOIN [AspNetUserRoles] ur ON ur.[RoleId] = r.Id " +
+                var queryResults = await connection.QueryAsync<string>("SELECT r.[UserName] FROM [AspNetRoles] r INNER JOIN [AspNetUserRoles] ur ON ur.[RoleId] = r.Id " +
                     "WHERE ur.UserId = @userId", new { userId = user.Id });
 
                 return queryResults.ToList();

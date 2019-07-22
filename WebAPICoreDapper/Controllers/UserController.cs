@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using WebAPICoreDapper.DTO;
 using WebAPICoreDapper.Fillter;
+using WebAPICoreDapper.Filter;
 using WebAPICoreDapper.Models;
 
 namespace WebAPICoreDapper.Controllers
@@ -31,8 +32,9 @@ namespace WebAPICoreDapper.Controllers
             _connectionString = configuration.GetConnectionString("DbConnectionString");
         }
 
-        // GET: api/Role
+        
         [HttpGet]
+      //  [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.VIEW)]
         public async Task<IActionResult> Get()
         {
             using (var conn = new SqlConnection(_connectionString))
@@ -46,8 +48,9 @@ namespace WebAPICoreDapper.Controllers
             }
         }
 
-        // GET: api/Role/5
+        
         [HttpGet("{id}")]
+       // [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.VIEW)]
         public async Task<IActionResult> Get(string id)
         {
             using (var conn = new SqlConnection(_connectionString))
@@ -93,9 +96,9 @@ namespace WebAPICoreDapper.Controllers
 
         }
 
-        // POST: api/Role
         [HttpPost]
         [ValidateModel]
+        [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.CREATE)]
         public async Task<IActionResult> Post([FromBody] AppUser user)
         {
             var result = await _userManager.CreateAsync(user,user.PasswordHash);
@@ -104,7 +107,6 @@ namespace WebAPICoreDapper.Controllers
             return BadRequest();
         }
 
-        // PUT: api/Role/5
         [HttpPut("{id}")]
         public async Task<IActionResult> Put([Required]Guid id, [FromBody] AppUser user)
         {
@@ -115,7 +117,6 @@ namespace WebAPICoreDapper.Controllers
             return BadRequest();
         }
 
-        // DELETE: api/ApiWithActions/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
