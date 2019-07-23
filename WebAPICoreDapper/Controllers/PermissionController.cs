@@ -1,152 +1,89 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Threading.Tasks;
-using Dapper;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using WebAPICoreDapper.Models;
-using WebAPICoreDapper.Extensions;
-using Microsoft.AspNetCore.Identity;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
+using WebAPICoreDapper.Data.Models;
+using WebAPICoreDapper.Data.Repository.InterfaceRepository;
+using WebAPICoreDapper.Filter;
 
 namespace WebAPICoreDapper.Controllers
 {
-
     [Route("api/[controller]")]
     [ApiController]
     public class PermissionController : ControllerBase
     {
-        private readonly string _connectionString;
         private readonly UserManager<AppUser> _userManager;
-        public PermissionController(IConfiguration configuration, UserManager<AppUser> userManager)
+        private readonly IPermissionRepository _permissionRepository;
+
+        public PermissionController(IConfiguration configuration, UserManager<AppUser> userManager,
+            IPermissionRepository permissionRepository)
         {
-            _connectionString = configuration.GetConnectionString("DbConnectionString");
             _userManager = userManager;
+            _permissionRepository = permissionRepository;
         }
 
         [HttpGet("function-actions")]
+        [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.VIEW)]
         public async Task<IActionResult> GetAllWithPermission()
         {
-            using (var conn = new SqlConnection(_connectionString))
-            {
-                if (conn.State == ConnectionState.Closed)
-                    await conn.OpenAsync();
-
-                var result = await conn.QueryAsync<FunctionActionViewModel>("Get_Function_WithActions", null, null, null, System.Data.CommandType.StoredProcedure);
-
-                return Ok(result);
-            }
+            return Ok(await _permissionRepository.GetAllWithPermissionAsync());
         }
 
         [HttpGet("role-permissions-user")]
+        [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.VIEW)]
         public async Task<IActionResult> GetAllRolePermissions([Required]string UserName)
         {
-            using (var conn = new SqlConnection(_connectionString))
-            {
-                if (conn.State == ConnectionState.Closed)
-                    conn.Open();
-
-                var paramaters = new DynamicParameters();
-                paramaters.Add("@UserName", UserName);
-
-                var result = await conn.QueryAsync<PermissionViewModel>("Get_Permission_ByUserName", paramaters, null, null, System.Data.CommandType.StoredProcedure);
-                return Ok(result);
-            }
+            return Ok(await _permissionRepository.GetAllRolePermissionsAsync(UserName));
         }
 
         [HttpPost("{role}/save-permissions")]
-        public async Task<IActionResult> SavePermissions([Required]Guid role, [FromBody]List<PermissionViewModel> permissions)
+        [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.CREATE)]
+        public async Task<IActionResult> SavePermissions([Required]Guid role,
+            [FromBody]List<PermissionViewModel> permissions)
         {
-            using (var conn = new SqlConnection(_connectionString))
-            {
-                if (conn.State == ConnectionState.Closed)
-                    conn.Open();
-
-                var dt = new DataTable();
-                dt.Columns.Add("RoleId", typeof(Guid));
-                dt.Columns.Add("FunctionId", typeof(string));
-                dt.Columns.Add("ActionId", typeof(string));
-                foreach (var item in permissions)
-                {
-                    dt.Rows.Add(role, item.FunctionId, item.ActionId);
-                }
-                var paramaters = new DynamicParameters();
-                paramaters.Add("@roleId", role);
-                paramaters.Add("@permissions", dt.AsTableValuedParameter("dbo.Permission"));
-                await conn.ExecuteAsync("Create_Permission", paramaters, null, null, System.Data.CommandType.StoredProcedure);
-                return Ok();
-            }
+            await _permissionRepository.SavePermissionsAsync(role, permissions);
+            return Ok();
         }
 
         // xoa quyen
         [HttpDelete("functions-delete-permission-user")]
-        public async Task<IActionResult> Del_FunctionPermissionUser([Required]string UserName, [Required]string ActionId)
+        [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.DELETE)]
+        public async Task<IActionResult> Del_FunctionPermissionUser([Required]string UserName,
+            [Required]string ActionId)
         {
             var TestUser = await _userManager.FindByNameAsync(UserName);
             if (TestUser != null)
             {
-                using (var conn = new SqlConnection(_connectionString))
-                {
-                    if (conn.State == ConnectionState.Closed)
-                        conn.Open();
-                    var paramaters = new DynamicParameters();
-                    paramaters.Add("@UserName", UserName);
-                    paramaters.Add("@ActionId", ActionId);
-                    var result = await conn.QueryAsync<FunctionViewModel>("Del_Permission_User", paramaters, null, null, System.Data.CommandType.StoredProcedure);
-                    return Ok(result);
-                }
+                return Ok(await _permissionRepository.Del_FunctionPermissionUserAsync(UserName, ActionId));
             }
             return BadRequest();
-
         }
 
         // nhung user co quyen xem
         [HttpGet("functions-view-all")]
+        [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.VIEW)]
         public async Task<IActionResult> GetAllFunctionByPermission()
         {
-            using (var conn = new SqlConnection(_connectionString))
-            {
-                if (conn.State == ConnectionState.Closed)
-                    conn.Open();
-
-                var result = await conn.QueryAsync<FunctionViewModel>("Get_Function_ByPermission_view_all", null, null, null, System.Data.CommandType.StoredProcedure);
-                return Ok(result);
-            }
+            return Ok(await _permissionRepository.GetAllFunctionByPermissionAsync());
         }
 
         // nhap user co quyen xem hay khong
         [HttpGet("functions-user-view")]
+        [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.VIEW)]
         public async Task<IActionResult> GetUserFunctionByPermissionId(string UserName)
         {
-            using (var conn = new SqlConnection(_connectionString))
-            {
-                if (conn.State == ConnectionState.Closed)
-                    conn.Open();
-                var resultUserID = await _userManager.FindByNameAsync(UserName);
-                var paramaters = new DynamicParameters();
-                paramaters.Add("@userId", resultUserID.Id);
-
-                var result = await conn.QueryAsync<FunctionViewModel>("Get_Function_ByPermission", paramaters, null, null, System.Data.CommandType.StoredProcedure);
-                return Ok(result);
-            }
+            return Ok(await _permissionRepository.GetUserFunctionByPermissionIdAsync(UserName));
         }
 
         // user co 1 trong cac quyen CRUD EIU
         [HttpGet("functions-user-CRUD_EIU")]
+        [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.CREATE)]
         public async Task<IActionResult> GetUserFunctionByPermission_CRUD_EIU()
         {
-            using (var conn = new SqlConnection(_connectionString))
-            {
-                if (conn.State == ConnectionState.Closed)
-                    conn.Open();
-                var result = await conn.QueryAsync<FunctionViewModel>
-                    ("Get_Function_ByPermission_APPROVE_CREATE_DELETE_EXPORT_IMPORT_UPDATE",
-                     null, null, null, System.Data.CommandType.StoredProcedure);
-                return Ok(result);
-            }
+            return Ok(await _permissionRepository.GetUserFunctionByPermission_CRUD_EIUAsync());
         }
     }
 }

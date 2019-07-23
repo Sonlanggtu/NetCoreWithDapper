@@ -1,19 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Threading.Tasks;
-using Dapper;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using WebAPICoreDapper.DTO;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
+using WebAPICoreDapper.Data.Models;
+using WebAPICoreDapper.Data.Repository;
+using WebAPICoreDapper.Data.Repository.InterfaceRepository;
 using WebAPICoreDapper.Fillter;
 using WebAPICoreDapper.Filter;
-using WebAPICoreDapper.Models;
 
 namespace WebAPICoreDapper.Controllers
 {
@@ -24,77 +20,34 @@ namespace WebAPICoreDapper.Controllers
     public class UserController : ControllerBase
     {
         private readonly UserManager<AppUser> _userManager;
-        private readonly string _connectionString;
+        private readonly IUserRepository _userRepository;
 
-        public UserController(UserManager<AppUser> userManager, IConfiguration configuration)
+        public UserController(UserManager<AppUser> userManager,
+            IUserRepository userRepository)
         {
             _userManager = userManager;
-            _connectionString = configuration.GetConnectionString("DbConnectionString");
+            _userRepository = userRepository;
         }
 
-        
         [HttpGet]
-       [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.VIEW)]
+        [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.VIEW)]
         public async Task<IActionResult> Get()
         {
-            using (var conn = new SqlConnection(_connectionString))
-            {
-                if (conn.State == System.Data.ConnectionState.Closed)
-                    await conn.OpenAsync();
-
-                var paramaters = new DynamicParameters();
-                var result = await conn.QueryAsync<AppUser>("Get_User_All", paramaters, null, null, System.Data.CommandType.StoredProcedure);
-                return Ok(result);
-            }
+            return Ok(await _userRepository.GetUserAsync());
         }
 
-        
         [HttpGet("{id}")]
         [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.VIEW)]
         public async Task<IActionResult> Get(string id)
         {
-            using (var conn = new SqlConnection(_connectionString))
-            {
-                if (conn.State == System.Data.ConnectionState.Closed)
-                    await conn.OpenAsync();
-
-                var paramaters = new DynamicParameters();
-                paramaters.Add("@id", id);
-                var result = await conn.QueryAsync<AppUser>("Get_User_By_Id", paramaters, null, null, System.Data.CommandType.StoredProcedure);
-                return Ok(result);
-            }
-
+            return Ok(await _userRepository.GetUserByIdAsync(id));
         }
 
         [HttpGet("paging")]
         [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.VIEW)]
         public async Task<IActionResult> GetPaging(string keyword, int pageIndex, int pageSize)
         {
-            using (var conn = new SqlConnection(_connectionString))
-            {
-                if (conn.State == System.Data.ConnectionState.Closed)
-                    await conn.OpenAsync();
-
-                var paramaters = new DynamicParameters();
-                paramaters.Add("@keyword", keyword);
-                paramaters.Add("@pageIndex", pageIndex);
-                paramaters.Add("@pageSize", pageSize);
-                paramaters.Add("@totalRow", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
-
-                var result = await conn.QueryAsync<AppUser>("Get_User_AllPaging", paramaters, null, null, System.Data.CommandType.StoredProcedure);
-
-                int totalRow = paramaters.Get<int>("@totalRow");
-
-                var pagedResult = new PagedResult<AppUser>()
-                {
-                    Items = result.ToList(),
-                    TotalRow = totalRow,
-                    PageIndex = pageIndex,
-                    PageSize = pageSize
-                };
-                return Ok(pagedResult);
-            }
-
+            return Ok(await _userRepository.GetPagingUserAsync(keyword, pageIndex, pageSize));
         }
 
         [HttpPost]
@@ -102,10 +55,10 @@ namespace WebAPICoreDapper.Controllers
         [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.CREATE)]
         public async Task<IActionResult> Post([FromBody] AppUser user)
         {
-            var result = await _userManager.CreateAsync(user,user.PasswordHash);
+            var result = await _userManager.CreateAsync(user, user.PasswordHash);
             if (result.Succeeded)
                 return Ok();
-            return BadRequest();
+            return BadRequest(result);
         }
 
         [HttpPut("{id}")]
@@ -130,47 +83,8 @@ namespace WebAPICoreDapper.Controllers
             return BadRequest();
         }
 
-
-        //[HttpPut("{id}/{roleName}/assign-to-roles")]
-        //public async Task<IActionResult> AssignToRoles([Required]Guid id, [Required]string roleName)
-        //{
-        //    var user = await _userManager.FindByIdAsync(id.ToString());
-        //    using (var connection = new SqlConnection(_connectionString))
-        //    {
-        //        await connection.OpenAsync();
-        //        var normalizedName = roleName.ToUpper();
-        //        var roleId = await connection.ExecuteScalarAsync<Guid?>($"SELECT [Id] FROM [AspNetRoles] WHERE [NormalizedName] = @{nameof(normalizedName)}", new { normalizedName });
-        //        if (!roleId.HasValue)
-        //        {
-        //            roleId = Guid.NewGuid();
-        //            await connection.ExecuteAsync($"INSERT INTO [AspNetRoles]([Id],[Name], [NormalizedName]) VALUES(@{nameof(roleId)},@{nameof(roleName)}, @{nameof(normalizedName)})",
-        //               new { roleName, normalizedName });
-        //        }
-
-
-        //        await connection.ExecuteAsync($"IF NOT EXISTS(SELECT 1 FROM [AspNetUserRoles] WHERE [UserId] = @userId AND [RoleId] = @{nameof(roleId)}) " +
-        //            $"INSERT INTO [AspNetUserRoles]([UserId], [RoleId]) VALUES(@userId, @{nameof(roleId)})",
-        //            new { userId = user.Id, roleId });
-        //        return Ok();
-        //    }
-        //}
-
-        //[HttpDelete("{id}/{roleName}/remove-roles")]
-        //[ValidateModel]
-        //public async Task<IActionResult> RemoveRoleToUser([Required]Guid id, [Required]string roleName)
-        //{
-        //    var user = await _userManager.FindByIdAsync(id.ToString());
-        //    using (var connection = new SqlConnection(_connectionString))
-        //    {
-        //        await connection.OpenAsync();
-        //        var roleId = await connection.ExecuteScalarAsync<Guid?>("SELECT [Id] FROM [AspNetRoles] WHERE [NormalizedName] = @normalizedName", new { normalizedName = roleName.ToUpper() });
-        //        if (roleId.HasValue)
-        //            await connection.ExecuteAsync($"DELETE FROM [AspNetUserRoles] WHERE [UserId] = @userId AND [RoleId] = @{nameof(roleId)}", new { userId = user.Id, roleId });
-        //        return Ok();
-        //    }
-        //}
-
         [HttpGet("{id}/roles")]
+        [ClaimRequirement(FunctionCode.SYSTEM_USER, ActionCode.VIEW)]
         public async Task<IActionResult> GetUserRoles(string id)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());

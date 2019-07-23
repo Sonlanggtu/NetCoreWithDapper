@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Localization.Routing;
 using Microsoft.AspNetCore.Mvc;
@@ -17,20 +10,22 @@ using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Swashbuckle.AspNetCore.Swagger;
-using WebAPICoreDapper.Resources;
-
-
-using Microsoft.AspNetCore.Identity;
-
-using WebAPICoreDapper.Data;
-using WebAPICoreDapper.Models;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Reflection;
 using System.Text;
+using WebAPICoreDapper.Data.Models;
+using WebAPICoreDapper.Data.Repository;
+using WebAPICoreDapper.Data.Repository.InterfaceRepository;
+using WebAPICoreDapper.Data.Store;
+using WebAPICoreDapper.Resources;
 
 namespace WebAPICoreDapper
 {
@@ -48,6 +43,13 @@ namespace WebAPICoreDapper
         {
             services.AddTransient<IUserStore<AppUser>, UserStore>();
             services.AddTransient<IRoleStore<AppRole>, RoleStore>();
+            services.AddTransient<IAccountRepository, AccountRepository>();
+            services.AddTransient<IFunctionRepository, FunctionRepository>();
+            services.AddTransient<IPermissionRepository, PermissionRepository>();
+            services.AddTransient<IProductRepository, ProductRepository>();
+            services.AddTransient<IRoleRepository, RoleRepository>();
+            services.AddTransient<IUserRepository, UserRepository>();
+
             services.AddIdentity<AppUser, AppRole>()
                 .AddDefaultTokenProviders();
 
@@ -61,8 +63,7 @@ namespace WebAPICoreDapper
                 opt.Password.RequiredLength = 6;
                 opt.Password.RequiredUniqueChars = 1;
             });
-
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1).AddJsonOptions(opt =>
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2).AddJsonOptions(opt =>
             {
                 opt.SerializerSettings.ContractResolver = new DefaultContractResolver();
             });
@@ -85,7 +86,6 @@ namespace WebAPICoreDapper
             };
             services.AddSingleton(options);
             services.AddSingleton<LocalService>();
-
 
             services.AddLocalization(otp => otp.ResourcesPath = "Resources");
 
@@ -122,15 +122,15 @@ namespace WebAPICoreDapper
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info {
-                    Title = "WebAPI Core & Dapper", Version = "v1",
+                c.SwaggerDoc("v1", new Info
+                {
+                    Title = "WebAPI Core & Dapper",
+                    Version = "v1",
                     Description = "GetStart API Swagger surface",
                     Contact = new Contact
                     {
                         Name = "Sonlanggtu"
                     }
-
-
                 });
 
                 c.AddSecurityDefinition("Bearer", new ApiKeyScheme
@@ -151,7 +151,6 @@ namespace WebAPICoreDapper
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
-
             loggerFactory.AddFile("Logs/myapp-{Date}.txt", isJson: true);
 
             app.UseExceptionHandler(options =>
@@ -179,17 +178,15 @@ namespace WebAPICoreDapper
                     }
                 });
             });
-
             if (env.IsDevelopment())
             {
-                //  app.UseDeveloperExceptionPage();
+                app.UseDeveloperExceptionPage();
             }
             else
             {
+                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
-            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), 
-            // specifying the Swagger JSON endpoint.
             app.UseSwagger(c =>
             {
                 c.PreSerializeFilters.Add((document, request) =>
@@ -205,12 +202,10 @@ namespace WebAPICoreDapper
 
             app.UseHttpsRedirection();
 
-
-
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
 
-            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), 
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
             // specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
@@ -219,7 +214,6 @@ namespace WebAPICoreDapper
 
             app.UseAuthentication();
             app.UseMvc();
-
         }
     }
 }
